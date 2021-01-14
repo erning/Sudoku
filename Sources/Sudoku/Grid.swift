@@ -19,7 +19,7 @@ public struct Grid {
      7>  63 64 65 | 66 67 68 | 69 70 71
      8>  72 73 74 | 75 76 77 | 78 79 80
     */
-    var raw = [UInt8](repeating: 0, count: 81)
+    private var raw = [UInt8](repeating: 0, count: 81)
 
     public subscript(i: Int) -> UInt8 {
         get {
@@ -92,7 +92,7 @@ extension Grid {
         return nums
     }
     
-    static let RCB: [[Int]] = {
+    private static let RCB: [[Int]] = {
         var v = [[Int]](repeating: [0,0,0], count: 81)
         for i in 0..<81 {
             v[i][0] = i / 9
@@ -102,7 +102,7 @@ extension Grid {
         return v
     }()
     
-    static let ROWS: [[Int]] = {
+    private static let ROWS: [[Int]] = {
         var v = [[Int]](repeating: [Int](repeating: 0, count: 9), count: 9)
         for i in 0..<9 {
             for j in 0..<9 {
@@ -112,7 +112,7 @@ extension Grid {
         return v
     }()
     
-    static let COLS: [[Int]] = {
+    private static let COLS: [[Int]] = {
         var v = [[Int]](repeating: [Int](repeating: 0, count: 9), count: 9)
         for i in 0..<9 {
             for j in 0..<9 {
@@ -122,7 +122,7 @@ extension Grid {
         return v
     }()
     
-    static let BOXES: [[Int]] = {
+    private static let BOXES: [[Int]] = {
         var v = [[Int]](repeating: [Int](repeating: 0, count: 9), count: 9)
         for i in 0..<9 {
             for j in 0..<9 {
@@ -132,7 +132,7 @@ extension Grid {
         return v
     }()
     
-    static let RELATIVES: [[Int]] = {
+    private static let RELATIVES: [[Int]] = {
         var v = [[Int]](repeating: [], count: 81)
         for i in 0..<81 {
             var m = Set<Int>()

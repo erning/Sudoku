@@ -31,6 +31,28 @@ final class SudokuTests: XCTestCase {
             print("Fail")
         }
     }
+    
+    func testStepByStep() {
+        let grid = Grid(
+            """
+            7 . . . . 1 5 . 9
+            2 . . 4 . . . 8 .
+            . . . . . 8 . 4 7
+            . . . 5 . . 8 . 1
+            . 6 . 2 8 . . 7 4
+            . . . . . . . 3 .
+            . . . 9 . 2 . . .
+            4 . 5 7 . 6 . . .
+            . . . . 5 . . . 2
+            """
+        )
+        print(grid)
+        let solver = Solver(grid)
+        for g in solver {
+            print()
+            print(g)
+        }
+    }
 
     static var allTests = [
         ("testExample", testExample),
