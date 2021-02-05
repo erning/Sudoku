@@ -1,6 +1,8 @@
+// Sudoku
+
 /*
  The Rules of Sudoku
- 
+
  The classic Sudoku game involves a grid of 81 squares. The grid
  is divided into nine blocks, each containing nine squares.
 
@@ -14,7 +16,3 @@
 
  Every puzzle has just one correct solution.
  */
-
-//struct Sudoku {
-//    var text = "Hello, World!"
-//}

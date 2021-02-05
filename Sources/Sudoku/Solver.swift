@@ -1,111 +1,73 @@
-//
-//
-//
+// Sudoku
 
 import Foundation
 
-public class Solver {
-    private class State {
-        let g: Grid
-        var i = -1
-        var pn = [UInt8]()
-        
-        init(_ grid: Grid) {
-            self.g = grid
+public struct Solution {
+    public let origin: Grid
+    public let steps: [(position: Int, number: UInt8)]
+
+    public var solved: Grid {
+        var grid = origin
+        for (position, number) in steps {
+            grid[position] = number
         }
+        return grid
     }
-    
-    private var states = [State]()
-    
-    public init(_ grid: Grid) {
-        states.append(State(grid))
-    }
-    
-    public func next() -> Grid?{
-        while true {
-            guard let state = states.last else {
+}
+
+public protocol Solver {
+    func solve(_: Grid) -> Solution?
+}
+
+public class DefaultSolver: Solver {
+    func leastPossibleNumbers(_ grid: Grid) -> (Int, [UInt8])? {
+        var rv: (position: Int, numbers: [UInt8])?
+        for position in grid.emptyCells {
+            let numbers = grid.possibleNumbers(at: position)
+            if numbers.isEmpty {
                 return nil
             }
-            if state.i == -1 {
-                let (i, pn) = Self.findEmptySquare(state.g)
-                if i < 0 {
-                    return nil
+            if numbers.count == 1 {
+                return (position, numbers)
+            }
+            if let least = rv {
+                if numbers.count < least.numbers.count {
+                    rv = (position, numbers)
                 }
-                state.i = i
-                state.pn = pn
+            } else {
+                rv = (position, numbers)
             }
-            
-            guard let n = state.pn.popLast() else {
-                states.removeLast()
-                continue
-            }
-            var grid = state.g
-            grid[state.i] = n
-
-            states.append(State(grid))
-            return grid
         }
+        return rv
     }
-    
-    public static func solve(_ grid: Grid) -> Grid? {
-        var g = grid
-        
+
+    public func solve(_ origin: Grid) -> Solution? {
+        if !origin.isValid {
+            return nil
+        }
+
+        var grid = origin
+        var steps: [(Int, UInt8)] = []
+
         func solveInternal() -> Bool {
-            let (i, pn) = Self.findEmptySquare(g)
-            if i < 0 {
+            if grid.emptyCells.isEmpty {
                 return true
             }
-
-            for n in pn {
-                g[i] = n
-                if solveInternal() == true {
+            guard let (position, numbers) = leastPossibleNumbers(grid) else {
+                return false
+            }
+            for number in numbers {
+                steps.append((position, number))
+                grid[position] = number
+                if solveInternal() {
                     return true
                 }
+                steps.removeLast()
+                grid[position] = 0
             }
-            g[i] = 0
             return false
         }
-        
-        return solveInternal() ? g : nil
-    }
-    
-    // (found square index, possible numbers)
-    static func findEmptySquare(_ grid: Grid) -> (Int, [UInt8]) {
-        var mi = -1
-        var mpn = [UInt8]()
-        for i in 0..<81 where grid[i] == 0 {
-            let pn = grid.possibleNumbers(i)
-            if pn.isEmpty {
-                // there's empty square, but no possible number for it
-                return (i, [])
-            }
-            if pn.count == 1 {
-                // there's only one possible number for the square, use it
-                return (i, pn)
-            }
-            if mi == -1 || pn.count < mpn.count {
-                mi = i
-                mpn = pn
-            }
-        }
-        return (mi, mpn)
-    }
-}
 
-extension Solver: Sequence {
-    public func makeIterator() -> SolverIterator {
-        return SolverIterator(self)
-    }
-}
-
-public class SolverIterator: IteratorProtocol {
-    let solver: Solver
-    
-    init(_ solver: Solver) {
-        self.solver = solver
-    }
-    
-    public func next() -> Grid? {
-        return self.solver.next()
+        return solveInternal() ? Solution(origin: origin, steps: steps) : nil
     }
 }

@@ -1,194 +1,202 @@
-//
-//
-//
+// Sudoku
 
 import Foundation
 
-public struct Grid {
-    /*
-     The following table shows the index of all squares.
-     0>   0  1  2 |  3  4  5 |  6  7  8
-     1>   9 10 11 | 12 13 14 | 15 16 17
-     2>  18 19 20 | 21 22 23 | 24 25 26
-        ----------+----------+----------
-     3>  27 28 29 | 30 31 32 | 33 34 35
-     4>  36 37 38 | 39 40 41 | 42 43 44
-     5>  45 46 47 | 48 49 50 | 51 52 53
-        ----------+----------+----------
-     6>  54 55 56 | 57 58 59 | 60 61 62
-     7>  63 64 65 | 66 67 68 | 69 70 71
-     8>  72 73 74 | 75 76 77 | 78 79 80
-    */
-    private var raw = [UInt8](repeating: 0, count: 81)
+/*
+  The following table shows the position of all cells.
+  0>   0  1  2 |  3  4  5 |  6  7  8
+  1>   9 10 11 | 12 13 14 | 15 16 17
+  2>  18 19 20 | 21 22 23 | 24 25 26
+     ----------+----------+----------
+  3>  27 28 29 | 30 31 32 | 33 34 35
+  4>  36 37 38 | 39 40 41 | 42 43 44
+  5>  45 46 47 | 48 49 50 | 51 52 53
+     ----------+----------+----------
+  6>  54 55 56 | 57 58 59 | 60 61 62
+  7>  63 64 65 | 66 67 68 | 69 70 71
+  8>  72 73 74 | 75 76 77 | 78 79 80
+ */
 
-    public subscript(i: Int) -> UInt8 {
+public struct Grid {
+    private var raw: [UInt8]
+
+    public init() {
+        raw = [UInt8](repeating: 0, count: 81)
+    }
+
+    public init(_ bytes: [UInt8]) {
+        self.init()
+        for i in 0 ..< bytes.count where i < raw.count {
+            let number = bytes[i]
+            raw[i] = number
+        }
+    }
+
+    public subscript(position: Int) -> UInt8 {
         get {
-            return self.raw[i]
+            raw[position]
         }
-        set(newValue) {
-            self.raw[i] = newValue
+        set {
+            raw[position] = newValue
         }
     }
-    
-    var emptySquareCount: Int {
-        // return self.raw.filter{$0 == 0}.count
-        var count = 0
-        for n in self.raw where n == 0 {
-            count += 1
-        }
-        return count
+
+    func isValid(number: UInt8) -> Bool {
+        number >= 0 && number <= 9
     }
-    
-    var emptySquares: [Int] {
-        var squares = [Int]()
-        for i in 0..<81 where self.raw[i] == 0 {
-            squares.append(i)
+
+    func isValid(position: Int) -> Bool {
+        position >= 0 && position < 81
+    }
+}
+
+public extension Grid {
+    var numbers: [UInt8] { raw }
+
+    var occupiedCells: [Int] {
+        raw.indices.filter { raw[$0] > 0 }
+    }
+
+    var emptyCells: [Int] {
+        raw.indices.filter { raw[$0] <= 0 }
+    }
+}
+
+public extension Grid {
+    func isCollided(at position: Int, with number: UInt8) -> Bool {
+        if number <= 0 {
+            return false
         }
-        return squares
+        for i in Self.relatedPositions(at: position) where raw[i] == number {
+            return true
+        }
+        return false
+    }
+
+    func isCollided(at position: Int) -> Bool {
+        isCollided(at: position, with: raw[position])
+    }
+
+    var collidedCells: [Int] {
+        occupiedCells.filter { isCollided(at: $0, with: raw[$0]) }
+    }
+
+    func collidedCells(at position: Int, with number: UInt8) -> [Int] {
+        Self.relatedPositions(at: position).filter { raw[$0] == number }
+    }
+
+    func collidedCells(at position: Int) -> [Int] {
+        collidedCells(at: position, with: raw[position])
+    }
+
+    var isValid: Bool {
+        for (position, number) in raw.enumerated() {
+            if !isValid(number: number) {
+                return false
+            }
+            if isCollided(at: position, with: number) {
+                return false
+            }
+        }
+        return true
+    }
+
+    var isSolved: Bool {
+        emptyCells.isEmpty && isValid
+    }
+}
+
+public extension Grid {
+    func possibleNumbers(at position: Int) -> [UInt8] {
+        var usedNumbers: Set<UInt8> = []
+        for i in Self.relatedPositions(at: position) where raw[i] > 0 {
+            usedNumbers.insert(raw[i])
+        }
+        let possibleNumbers = Set<UInt8>(1 ... 9).subtracting(usedNumbers)
+        return Array(possibleNumbers).sorted()
     }
 }
 
 extension Grid {
-    public var isValid: Bool {
-        get {
-            var taken = [[Int]](repeating: [Int](repeating: 0, count: 9), count: 3)
-            for i in 0..<81 where self.raw[i] > 0 {
-                let bit = Int(1) << (self.raw[i] - 1)
-                for k in 0..<3 {
-                    let j = Self.RCB[i][k]
-                    if (taken[k][j] & bit) != 0 {
-                        return false
-                    }
-                    taken[k][j] |= bit
-                }
-            }
-            return true
-        }
-    }
-    
-    func isValid(_ i: Int, _ n: UInt8) -> Bool {
-        var taken = 0
-        for j in Self.RELATIVES[i] {
-            if self.raw[j] > 0 {
-                taken |= 1 << (self.raw[j] - 1)
-            }
-        }
-        return (taken & (1 << (n-1))) == 0
+    static func relatedPositions(at position: Int) -> [Int] {
+        positionRelationships[position]
     }
 
-    func possibleNumbers(_ i: Int) -> [UInt8] {
-        var taken = 0
-        for j in Self.RELATIVES[i] {
-            if self.raw[j] > 0 {
-                taken |= 1 << (self.raw[j] - 1)
+    static let positionRelationships: [[Int]] = {
+        var relationships: [[Int]] = []
+        for position in 0 ..< 81 {
+            var relationship: Set<Int> = []
+            let row = position / 9
+            let column = position % 9
+            let block = position / 27 * 3 + (position / 3) % 3
+            for i in 0 ..< 9 {
+                relationship.insert(row * 9 + i)
+                relationship.insert(i * 9 + column)
+                relationship.insert(i / 3 * 9 + i % 3 + block / 3 * 27 + (block % 3) * 3)
             }
+            relationship.remove(position)
+            relationships.append(Array(relationship).sorted())
         }
-        var nums = [UInt8]()
-        for n in 0..<9 {
-            if (taken & (1 << n)) == 0 {
-                nums.append(UInt8(n+1))
-            }
-        }
-        return nums
-    }
-    
-    private static let RCB: [[Int]] = {
-        var v = [[Int]](repeating: [0,0,0], count: 81)
-        for i in 0..<81 {
-            v[i][0] = i / 9
-            v[i][1] = i % 9
-            v[i][2] = i/27*3 + (i/3)%3
-        }
-        return v
-    }()
-    
-    private static let ROWS: [[Int]] = {
-        var v = [[Int]](repeating: [Int](repeating: 0, count: 9), count: 9)
-        for i in 0..<9 {
-            for j in 0..<9 {
-                v[i][j] = i*9 + j
-            }
-        }
-        return v
-    }()
-    
-    private static let COLS: [[Int]] = {
-        var v = [[Int]](repeating: [Int](repeating: 0, count: 9), count: 9)
-        for i in 0..<9 {
-            for j in 0..<9 {
-                v[i][j] = i + j*9
-            }
-        }
-        return v
-    }()
-    
-    private static let BOXES: [[Int]] = {
-        var v = [[Int]](repeating: [Int](repeating: 0, count: 9), count: 9)
-        for i in 0..<9 {
-            for j in 0..<9 {
-                v[i][j] = j/3*9 + j%3 + i/3*27 + (i%3)*3
-            }
-        }
-        return v
-    }()
-    
-    private static let RELATIVES: [[Int]] = {
-        var v = [[Int]](repeating: [], count: 81)
-        for i in 0..<81 {
-            var m = Set<Int>()
-            for j in Self.ROWS[Self.RCB[i][0]] {
-                m.insert(j)
-            }
-            for j in COLS[Self.RCB[i][1]] {
-                m.insert(j)
-            }
-            for j in BOXES[Self.RCB[i][2]] {
-                m.insert(j)
-            }
-            v[i] = Array(m)
-        }
-        return v
+        return relationships
     }()
 }
 
-extension Grid: CustomStringConvertible {
-    public init(_ data: String) {
+extension Grid: Equatable {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.raw == rhs.raw
+    }
+}
+
+public extension Grid {
+    init(_ string: String) {
+        self.init()
         var i = 0
-        for c in data where i < 81 {
-            if let c = c.asciiValue {
-                if c >= 0x30 && c <= 0x39 {
-                    self.raw[i] = c - 0x30
-                    i += 1
-                } else if c == 0x2e {
-                    self.raw[i] = 0
-                    i += 1
-                }
+        for char in string where i < raw.count {
+            switch char.asciiValue {
+            case let ascii? where ascii >= 0x30 && ascii <= 0x39:
+                raw[i] = ascii - 0x30
+                i += 1
+            case let ascii? where ascii == 0x2E:
+                raw[i] = 0
+                i += 1
+            case .some, .none:
+                continue
             }
         }
     }
-    
+}
+
+extension Grid: CustomStringConvertible {
     public var description: String {
-        get {
-            var s = ""
-            for i in 0..<81 {
-                if i > 0 {
-                    if i % 9 == 0 {
-                        s += "\n"
-                    } else if i % 3 == 0 {
-                        s += " |"
-                    }
-                    if i % 27 == 0 {
-                        s += "-------+-------+-------\n"
-                    }
-                }
-                let c = self.raw[i]
-                if c == 0 {
-                    s += " ."
-                } else {
-                    s += " \(c)"
-                }
+        let empty = " ."
+        var board = raw[0] == 0 ? empty : " \(raw[0])"
+        for position in 1 ..< 81 {
+            if position % 9 == 0 {
+                board += "\n"
+            } else if position % 3 == 0 {
+                board += " |"
             }
-            return s
+            if position % 27 == 0 {
+                board += "-------+-------+-------\n"
+            }
+            board += raw[position] == 0 ? " ." : " \(raw[position])"
         }
+        return board
     }
+}
+
+public extension Grid {
+    static let example = Grid(
+        """
+        7 . . . . 1 5 . 9
+        2 . . 4 . . . 8 .
+        . . . . . 8 . 4 7
+        . . . 5 . . 8 . 1
+        . 6 . 2 8 . . 7 4
+        . . . . . . . 3 .
+        . . . 9 . 2 . . .
+        4 . 5 7 . 6 . . .
+        . . . . 5 . . . 2
+        """
+    )
 }
