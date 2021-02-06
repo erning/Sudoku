@@ -3,8 +3,10 @@
 import Foundation
 
 public struct Solution {
+    public typealias Step = (position: Int, number: UInt8)
+
     public let origin: Grid
-    public let steps: [(position: Int, number: UInt8)]
+    public let steps: [Step]
 
     public var solved: Grid {
         var grid = origin
@@ -16,7 +18,10 @@ public struct Solution {
 }
 
 public protocol Solver {
+    typealias ProgressCallback = (Grid, [Solution.Step]) -> Bool
+
     func solve(_: Grid) -> Solution?
+    func solve(_: Grid, progress: ProgressCallback) -> Solution?
 }
 
 public class DefaultSolver: Solver {
@@ -42,14 +47,21 @@ public class DefaultSolver: Solver {
     }
 
     public func solve(_ origin: Grid) -> Solution? {
+        solve(origin, progress: { _, _ in true })
+    }
+
+    public func solve(_ origin: Grid, progress: Solver.ProgressCallback) -> Solution? {
         if !origin.isValid {
             return nil
         }
 
         var grid = origin
-        var steps: [(Int, UInt8)] = []
+        var steps: [Solution.Step] = []
 
         func solveInternal() -> Bool {
+            if progress(grid, steps) == false {
+                return false
+            }
             if grid.emptyCells.isEmpty {
                 return true
             }
