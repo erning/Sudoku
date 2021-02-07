@@ -8,20 +8,26 @@ public struct Solution {
     public let origin: Grid
     public let steps: [Step]
 
-    public var solved: Grid {
+    public var final: Grid {
         var grid = origin
-        for (position, number) in steps {
-            grid[position] = number
+        for step in steps {
+            grid[step.position] = step.number
         }
         return grid
     }
 }
 
-public protocol Solver {
-    typealias ProgressCallback = (Grid, [Solution.Step]) -> Bool
+public enum Result {
+    case success(Solution)
+    case invalid
+    case failure
+}
 
-    func solve(_: Grid) -> Solution?
-    func solve(_: Grid, progress: ProgressCallback) -> Solution?
+public protocol Solver {
+    typealias ProgressCallback = (_ current: Grid, _ steps: [Solution.Step]) -> Bool
+
+    func solve(_: Grid) -> Result
+    func solve(_: Grid, progress: ProgressCallback) -> Result
 }
 
 public class DefaultSolver: Solver {
@@ -46,13 +52,13 @@ public class DefaultSolver: Solver {
         return rv
     }
 
-    public func solve(_ origin: Grid) -> Solution? {
-        solve(origin, progress: { _, _ in true })
+    public func solve(_ origin: Grid) -> Result {
+        return solve(origin, progress: { _, _ in true })
     }
 
-    public func solve(_ origin: Grid, progress: Solver.ProgressCallback) -> Solution? {
+    public func solve(_ origin: Grid, progress: Solver.ProgressCallback) -> Result {
         if !origin.isValid {
-            return nil
+            return .invalid
         }
 
         var grid = origin
@@ -80,6 +86,8 @@ public class DefaultSolver: Solver {
             return false
         }
 
-        return solveInternal() ? Solution(origin: origin, steps: steps) : nil
+        return solveInternal()
+            ? .success(Solution(origin: origin, steps: steps))
+            : .failure
     }
 }

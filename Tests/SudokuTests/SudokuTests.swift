@@ -56,18 +56,27 @@ final class SudokuTests: XCTestCase {
             return true
         }
 
-        guard let solution = DefaultSolver().solve(grid, progress: progress) else {
+        let result = DefaultSolver().solve(grid, progress: progress)
+        switch result {
+        case .success(let solution):
+            XCTAssertEqual(solution.steps.count, grid.emptyCells.count)
+            XCTAssert(true)
+            // print(count)
+        default:
             XCTAssert(false)
-            return
         }
-        XCTAssertEqual(solution.steps.count, grid.emptyCells.count)
     }
 
     func testNoSolution() throws {
         var grid = Grid.example
         grid[1] = 8
-        let solution = DefaultSolver().solve(grid)
-        XCTAssertNil(solution)
+        let result = DefaultSolver().solve(grid)
+        switch result {
+        case .failure:
+            XCTAssert(true)
+        default:
+            XCTAssert(false)
+        }
     }
 
     func testSolved() throws {
@@ -94,8 +103,11 @@ final class SudokuTests: XCTestCase {
             4, 2, 9, 1, 8, 5, 7, 6, 3,
         ])
 
-        let solved = DefaultSolver().solve(grid)?.solved
-        XCTAssertEqual(solved, expected)
+        if case let .success(solution) = DefaultSolver().solve(grid) {
+            XCTAssertEqual(solution.final, expected)
+            return
+        }
+        XCTAssert(false)
     }
 
     static var allTests = [
