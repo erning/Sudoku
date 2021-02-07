@@ -19,12 +19,14 @@ import Foundation
 
 public struct Grid {
     private var raw: [UInt8]
+}
 
-    public init() {
+public extension Grid {
+    init() {
         raw = [UInt8](repeating: 0, count: 81)
     }
 
-    public init(_ bytes: [UInt8]) {
+    init(_ bytes: [UInt8]) {
         self.init()
         for i in 0 ..< bytes.count where i < raw.count {
             let number = bytes[i]
@@ -32,7 +34,7 @@ public struct Grid {
         }
     }
 
-    public subscript(position: Int) -> UInt8 {
+    subscript(position: Int) -> UInt8 {
         get {
             raw[position]
         }
@@ -41,16 +43,6 @@ public struct Grid {
         }
     }
 
-    func isValid(number: UInt8) -> Bool {
-        number >= 0 && number <= 9
-    }
-
-    func isValid(position: Int) -> Bool {
-        position >= 0 && position < 81
-    }
-}
-
-public extension Grid {
     var numbers: [UInt8] { raw }
 
     var occupiedCells: [Int] {
@@ -60,11 +52,9 @@ public extension Grid {
     var emptyCells: [Int] {
         raw.indices.filter { raw[$0] <= 0 }
     }
-}
 
-public extension Grid {
     func isCollided(at position: Int, with number: UInt8) -> Bool {
-        if number <= 0 {
+        if number == 0 {
             return false
         }
         for i in Self.relatedPositions(at: position) where raw[i] == number {
@@ -91,7 +81,7 @@ public extension Grid {
 
     var isValid: Bool {
         for (position, number) in raw.enumerated() {
-            if !isValid(number: number) {
+            if !Self.isValid(number: number) {
                 return false
             }
             if isCollided(at: position, with: number) {
@@ -104,9 +94,7 @@ public extension Grid {
     var isSolved: Bool {
         emptyCells.isEmpty && isValid
     }
-}
 
-public extension Grid {
     func possibleNumbers(at position: Int) -> [UInt8] {
         var usedNumbers: Set<UInt8> = []
         for i in Self.relatedPositions(at: position) where raw[i] > 0 {
@@ -118,6 +106,14 @@ public extension Grid {
 }
 
 extension Grid {
+    static func isValid(number: UInt8) -> Bool {
+        number >= 0 && number <= 9
+    }
+
+    static func isValid(position: Int) -> Bool {
+        position >= 0 && position < 81
+    }
+
     static func relatedPositions(at position: Int) -> [Int] {
         positionRelationships[position]
     }
@@ -147,25 +143,6 @@ extension Grid: Equatable {
     }
 }
 
-public extension Grid {
-    init(_ string: String) {
-        self.init()
-        var i = 0
-        for char in string where i < raw.count {
-            switch char.asciiValue {
-            case let ascii? where ascii >= 0x30 && ascii <= 0x39:
-                raw[i] = ascii - 0x30
-                i += 1
-            case let ascii? where ascii == 0x2E:
-                raw[i] = 0
-                i += 1
-            case .some, .none:
-                continue
-            }
-        }
-    }
-}
-
 extension Grid: CustomStringConvertible {
     public var description: String {
         let empty = " ."
@@ -186,6 +163,23 @@ extension Grid: CustomStringConvertible {
 }
 
 public extension Grid {
+    init(_ string: String) {
+        self.init()
+        var i = 0
+        for char in string where i < raw.count {
+            switch char.asciiValue {
+            case let ascii? where ascii >= 0x30 && ascii <= 0x39:
+                raw[i] = ascii - 0x30
+                i += 1
+            case let ascii? where ascii == 0x2E:
+                raw[i] = 0
+                i += 1
+            case .some, .none:
+                continue
+            }
+        }
+    }
+
     static let example = Grid(
         """
         7 . . . . 1 5 . 9

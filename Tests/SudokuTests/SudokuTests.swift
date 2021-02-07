@@ -51,17 +51,17 @@ final class SudokuTests: XCTestCase {
         let grid = Grid.example
 
         var count = 0
-        let progress: Solver.ProgressCallback = { _, _ in
+        let callback: SolvingCallback = { _, _ in
             count += 1
             return true
         }
 
-        let result = DefaultSolver().solve(grid, progress: progress)
+        let result = DefaultSolver().solve(grid, callback: callback)
         switch result {
-        case .success(let solution):
+        case let .success(solution):
             XCTAssertEqual(solution.steps.count, grid.emptyCells.count)
             XCTAssert(true)
-            // print(count)
+        // print(count)
         default:
             XCTAssert(false)
         }

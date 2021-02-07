@@ -17,17 +17,17 @@ public struct Solution {
     }
 }
 
-public enum Result {
+public enum SolveResult {
     case success(Solution)
     case invalid
     case failure
 }
 
-public protocol Solver {
-    typealias ProgressCallback = (_ current: Grid, _ steps: [Solution.Step]) -> Bool
+public typealias SolvingCallback = (_ current: Grid, _ steps: [Solution.Step]) -> Bool
 
-    func solve(_: Grid) -> Result
-    func solve(_: Grid, progress: ProgressCallback) -> Result
+public protocol Solver {
+    func solve(_: Grid) -> SolveResult
+    func solve(_: Grid, callback: SolvingCallback) -> SolveResult
 }
 
 public class DefaultSolver: Solver {
@@ -52,11 +52,11 @@ public class DefaultSolver: Solver {
         return rv
     }
 
-    public func solve(_ origin: Grid) -> Result {
-        return solve(origin, progress: { _, _ in true })
+    public func solve(_ origin: Grid) -> SolveResult {
+        solve(origin, callback: { _, _ in true })
     }
 
-    public func solve(_ origin: Grid, progress: Solver.ProgressCallback) -> Result {
+    public func solve(_ origin: Grid, callback: SolvingCallback) -> SolveResult {
         if !origin.isValid {
             return .invalid
         }
@@ -65,7 +65,7 @@ public class DefaultSolver: Solver {
         var steps: [Solution.Step] = []
 
         func solveInternal() -> Bool {
-            if progress(grid, steps) == false {
+            if callback(grid, steps) == false {
                 return false
             }
             if grid.emptyCells.isEmpty {
