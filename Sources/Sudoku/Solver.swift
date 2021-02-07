@@ -31,6 +31,8 @@ public protocol Solver {
 }
 
 public class DefaultSolver: Solver {
+    public init() {}
+
     func leastPossibleNumbers(_ grid: Grid) -> (Int, [UInt8])? {
         var rv: (position: Int, numbers: [UInt8])?
         for position in grid.emptyCells {
