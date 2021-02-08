@@ -105,7 +105,7 @@ public extension Grid {
     }
 }
 
-extension Grid {
+public extension Grid {
     static func isValid(number: UInt8) -> Bool {
         number >= 0 && number <= 9
     }
@@ -117,7 +117,9 @@ extension Grid {
     static func relatedPositions(at position: Int) -> [Int] {
         positionRelationships[position]
     }
+}
 
+extension Grid {
     static let positionRelationships: [[Int]] = {
         var relationships: [[Int]] = []
         for position in 0 ..< 81 {
