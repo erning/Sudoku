@@ -110,6 +110,22 @@ final class SudokuTests: XCTestCase {
         XCTAssert(false)
     }
 
+    func testCancel() throws {
+        let grid = Grid.example
+
+        var count = 0
+        let callback: SolvingCallback = { _, _ in
+            count += 1
+            return count < 5
+        }
+
+        if case let .canceled(solution) = DefaultSolver().solve(grid, callback: callback) {
+            XCTAssertEqual(solution.steps.count, 4)
+        } else {
+            XCTAssert(false)
+        }
+    }
+
     static var allTests = [
         ("testExample", testExample),
     ]

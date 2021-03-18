@@ -21,6 +21,7 @@ public enum SolveResult {
     case success(Solution)
     case invalid
     case failure
+    case canceled(Solution)
 }
 
 public typealias SolvingCallback = (_ current: Grid, _ steps: [Solution.Step]) -> Bool
@@ -66,9 +67,9 @@ public class DefaultSolver: Solver {
         var grid = origin
         var steps: [Solution.Step] = []
 
-        func solveInternal() -> Bool {
+        func solveInternal() -> Bool? {
             if callback(grid, steps) == false {
-                return false
+                return nil
             }
             if grid.emptyCells.isEmpty {
                 return true
@@ -79,7 +80,10 @@ public class DefaultSolver: Solver {
             for number in numbers {
                 steps.append((position, number))
                 grid[position] = number
-                if solveInternal() {
+                guard let success = solveInternal() else {
+                    return nil
+                }
+                if success {
                     return true
                 }
                 steps.removeLast()
@@ -88,7 +92,10 @@ public class DefaultSolver: Solver {
             return false
         }
 
-        return solveInternal()
+        guard let success = solveInternal() else {
+            return .canceled(Solution(origin: origin, steps: steps))
+        }
+        return success
             ? .success(Solution(origin: origin, steps: steps))
             : .failure
     }
